@@ -2,11 +2,11 @@ from setuptools import setup
 
 
 packages = {
-    'docr_license_client': 'docr_license_client/'
+    'license_client': 'license_client/'
 }
 
 setup(
-    name='docr_license_client',
+    name='license_client',
     version='0.1.0',
     author='Dbrain',
     author_email='',
