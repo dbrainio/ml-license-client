@@ -1,0 +1,8 @@
+.ipynb_checkpoints/
+.vscode/
+build/
+dist/
+__pycache__/
+docr_license_client.egg-info
+*.ipynb
+venv/
