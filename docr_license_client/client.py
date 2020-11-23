@@ -88,8 +88,8 @@ class MultiCheckerV3:
             count: int = 1,
             force: bool = False,
     ):
-        if KEY == '' or IV == '':
-            raise NoConfigs()
+        if KEY == b'' or IV == b'':
+            raise NoConfigs('No LICENSE_CRYPTO_KEY or LICENSE_CRYPTO_IV envs found')
         if not license:
             raise InvalidLicense()
         if license.startswith('Token '):
