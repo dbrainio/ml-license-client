@@ -11,6 +11,14 @@ from aiohttp import ClientSession
 from .config import KEY, IV
 
 
+def set_key(key: bytes):
+    KEY = key
+
+    
+def set_iv(iv: bytes):
+    IV = iv
+
+
 class InvalidLicense(Exception):
     pass
 
