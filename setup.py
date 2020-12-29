@@ -18,7 +18,6 @@ setup(
     install_requires=[
         'pycryptodome==3.9.8',
         'aiohttp>=3.5.4',
-        'Nuitka==0.6.10.3',
     ],
     classifiers=[
         'Programming Language :: Python :: 3',
