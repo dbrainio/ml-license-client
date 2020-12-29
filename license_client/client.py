@@ -80,6 +80,8 @@ class ClientV3:
 class MultiCheckerV3:
     def __init__(self, url: str, key: bytes = KEY, iv: bytes = IV):
         self._url = url
+        self._key = key
+        self._iv = iv
         self._clients = {}
 
     async def inc_counter(
@@ -90,13 +92,13 @@ class MultiCheckerV3:
             count: int = 1,
             force: bool = False,
     ):
-        if key == b'' or iv == b'':
+        if self._key == b'' or self._iv == b'':
             raise NoConfigs('No LICENSE_CRYPTO_KEY or LICENSE_CRYPTO_IV envs found')
         if not license:
             raise InvalidLicense()
         if license.startswith('Token '):
             license = license.split('Token ', 1)[1].strip()
-        client = self._clients.get(license, ClientV3(self._url, license, key=key, iv=iv))
+        client = self._clients.get(license, ClientV3(self._url, license, key=self._key, iv=self._iv))
         self._clients[license] = client
         if not await client.check(label, name, count=count, force=force):
             raise InvalidLicense()
