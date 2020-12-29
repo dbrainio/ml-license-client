@@ -11,14 +11,6 @@ from aiohttp import ClientSession
 from .config import KEY, IV
 
 
-def set_key(key: bytes):
-    KEY = key
-
-    
-def set_iv(iv: bytes):
-    IV = iv
-
-
 class InvalidLicense(Exception):
     pass
 
@@ -30,9 +22,11 @@ class ClientV3:
     OFFLINE_TIMEOUT = 10 * 86400  # 10 days
     CHECK_INTERVAL = 30  # 30 sec
 
-    def __init__(self, url: str, license: str):
+    def __init__(self, url: str, license: str, key: bytes = KEY, iv: bytes = IV):
         self.url = url
         self.license = license
+        self.key = key
+        self.iv = iv
         self.last_success = dict()
         self.counters = collections.Counter()
 
@@ -55,7 +49,7 @@ class ClientV3:
         lcn += b':' + salt
         lcn += b'=' * ((16 - len(lcn) % 16) % 16)
         # print(lcn)
-        lcn = AES.new(KEY, AES.MODE_CBC, IV).encrypt(lcn)
+        lcn = AES.new(self.key, AES.MODE_CBC, self.iv).encrypt(lcn)
         try:
             async with ClientSession(trust_env=True) as session:
                 async with session.post(self.url, data=lcn) as resp:
@@ -65,7 +59,7 @@ class ClientV3:
             # print(content)
             if status != 200:
                 return False
-            resp = AES.new(KEY, AES.MODE_CBC, IV).decrypt(content)
+            resp = AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(content)
             # print(resp)
             status, s = resp.split(b':', 1)
             if status != b'success':
@@ -84,7 +78,7 @@ class ClientV3:
 
 
 class MultiCheckerV3:
-    def __init__(self, url: str):
+    def __init__(self, url: str, key: bytes = KEY, iv: bytes = IV):
         self._url = url
         self._clients = {}
 
@@ -96,13 +90,13 @@ class MultiCheckerV3:
             count: int = 1,
             force: bool = False,
     ):
-        if KEY == b'' or IV == b'':
+        if key == b'' or iv == b'':
             raise NoConfigs('No LICENSE_CRYPTO_KEY or LICENSE_CRYPTO_IV envs found')
         if not license:
             raise InvalidLicense()
         if license.startswith('Token '):
             license = license.split('Token ', 1)[1].strip()
-        client = self._clients.get(license, ClientV3(self._url, license))
+        client = self._clients.get(license, ClientV3(self._url, license, key=key, iv=iv))
         self._clients[license] = client
         if not await client.check(label, name, count=count, force=force):
             raise InvalidLicense()
