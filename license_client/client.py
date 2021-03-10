@@ -14,6 +14,7 @@ from .config import KEY, IV
 class InvalidLicense(Exception):
     pass
 
+
 class NoConfigs(Exception):
     pass
 
@@ -48,7 +49,7 @@ class ClientV3:
         salt = Random.get_random_bytes(32)
         lcn += b':' + salt
         lcn += b'=' * ((16 - len(lcn) % 16) % 16)
-        # print(lcn)
+
         lcn = AES.new(self.key, AES.MODE_CBC, self.iv).encrypt(lcn)
         try:
             async with ClientSession(trust_env=True) as session:
@@ -73,7 +74,7 @@ class ClientV3:
             raise
         except Exception as e:
             logging.exception(e)
-            diff = int(time.monotonic()) - self.last_success.get(label, 0)
+            diff = int(time.monotonic()) - self.last_success.get(label, -self.OFFLINE_TIMEOUT)
             return diff < self.OFFLINE_TIMEOUT
 
 
