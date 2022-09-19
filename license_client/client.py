@@ -1,7 +1,8 @@
+import asyncio
 import base64
 import collections
 import json
-import logging
+from logging import getLogger
 import time
 
 from Crypto import Random
@@ -9,6 +10,9 @@ from Crypto.Cipher import AES
 from aiohttp import ClientSession
 
 from .config import KEY, IV
+
+
+logging = getLogger('docr.license')
 
 
 class InvalidLicense(Exception):
@@ -29,7 +33,7 @@ class ClientV3:
         self.key = key
         self.iv = iv
         self.last_success = dict()
-        self.counters = collections.Counter()
+        self.counters = collections.defaultdict(int)
 
     async def check(
             self,
@@ -39,11 +43,12 @@ class ClientV3:
             force: bool = False
     ) -> bool:
         self.counters[name] += count
+        logging.debug(f'inc_counter[label={label}, name={name}]: {count}, result={self.counters[name]}')
         if label in self.last_success and not force:
             diff = int(time.monotonic()) - self.last_success[label]
             if diff < self.CHECK_INTERVAL:
                 return True
-        counters = json.dumps(self.counters).encode()
+        counters = json.dumps(dict(self.counters)).encode()
         counters = base64.b64encode(counters)
         lcn = self.license.encode() + b':' + label.encode() + b':' + counters
         salt = Random.get_random_bytes(32)
@@ -56,18 +61,18 @@ class ClientV3:
                 async with session.post(self.url, data=lcn) as resp:
                     status = resp.status
                     content = await resp.read()
-                    logging.info('license sent')
+                    logging.info(f'inc_counter request: counters={dict(self.counters)}')
             # print(content)
             if status != 200:
                 return False
             resp = AES.new(self.key, AES.MODE_CBC, self.iv).decrypt(content)
-            # print(resp)
+            logging.debug(f'inc_counter response: {resp}')
             status, s = resp.split(b':', 1)
             if status != b'success':
                 return False
             if s.rstrip(b'=') != salt.rstrip(b'='):
                 return False
-            self.counters = collections.Counter()
+            self.counters = collections.defaultdict(int)
             self.last_success[label] = int(time.monotonic())
             return True
         except KeyboardInterrupt:
