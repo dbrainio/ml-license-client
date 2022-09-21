@@ -7,11 +7,11 @@ packages = {
 
 setup(
     name='license_client',
-    version='0.2.1',
+    version='0.3.0',
     author='Dbrain',
     author_email='',
     license='',
-    description='',
+    description='Client of Dbrain License Service',
     packages=packages,
     package_dir=packages,
     include_package_data=False,
